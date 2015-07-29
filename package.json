@@ -1,0 +1,25 @@
+{
+  "name": "papi-client.js",
+  "version": "0.0.1",
+  "description": "PAPI client API wrapper for NodeJs",
+  "homepage": "https://github.com/makeitsocial/papi-client.js",
+  "author": "Make it Social <ted@makeitsocial.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/makeitsocial/papi-client.js.git"
+  },
+  "main": "lib/index.js",
+  "devDependencies": {
+    "body-parser": "^1.12.4",
+    "chai": "~1.9.1",
+    "express": "^4.12.4",
+    "mocha": "~1.20.1",
+    "multer": "^0.1.8"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "request": "^2.57.0"
+  }
+}
