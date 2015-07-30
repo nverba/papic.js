@@ -4,7 +4,7 @@ PAPI Client SDK for NodeJs
 ## Installation
 
 ```bash
-$ npm install makeitsocial/papi-client.js --save
+$ npm install makeitsocial/papic.js --save
 ```
 
 ## Server-side with Express
@@ -16,7 +16,7 @@ var app = express();
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended:true}));
 
-var pc = require('papi-client.js');
+var pc = require('papic.js');
 pc.route(app);
 app.use('/papi', express.static(pc.staticPath));
 
