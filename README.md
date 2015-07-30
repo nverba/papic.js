@@ -28,6 +28,10 @@ var server = app.listen(process.env.PORT || 3000, function(){
 
 ## Client-side with Angular
 
+```html
+  <script src="/papi/js/papiclient.js"></script>
+```
+
 ```js
 angular.module('Main',['papiclient'])
 .controller('Provider', ['$scope', 'PapiClient', function($scope, PapiClient){
