@@ -134,7 +134,30 @@ describe('mainSpec', function(){
 		});
 	});
 	
-	describe('create', function(){
+	describe('data access and create', function(){
+		it('should getData', function(done){
+			nock('http://localhost:8080').get('/api/providers').reply(200,[]);
+			main.getData('http://localhost:8080/api/providers','test','test',function(err,r){
+				expect(err).to.be.null;
+				expect(r).to.have.length(0);
+				done();
+			});
+		});
+		it('should get product', function(done){
+			nock('http://localhost:8080').get('/api/products/1').reply(500,{error:'not found'});
+			main.getData('http://localhost:8080/api/products/1','test','test',function(err,r){
+				expect(r).to.have.property('error','not found');
+				done();
+			});
+		});
+		it('should put data', function(done){
+			nock('http://localhost:8080').put('/api/providers/0').reply(200,{status:'OK'});
+			var data ={};
+			main.putData('http://localhost:8080/api/providers/0',data,'test','test',function(err,r){
+				expect(r).to.have.property('status','OK');
+				done();
+			});
+		});
 		it('should create a provider', function(done){
 			var data = {name: 'pv1', logo:'http', email:'a@b.c'};
 			nock('http://localhost:8080').post('/api/providers').reply(201,data);
@@ -143,16 +166,169 @@ describe('mainSpec', function(){
 				done();
 			});
 		});
+		it('should delData', function(done){
+			nock('http://localhost:8080').delete('/api/providers/10').reply(204,{status:'OK'});
+			main.delData('http://localhost:8080/api/providers/10','test','test',function(err,r){
+				expect(r).to.have.property('status','OK');
+				done();
+			});
+		});
+		it('should handle res_sender', function(done){
+			var res = {
+				status:function(st){ res._status = st; return res; },
+				send:function(d){ res._data = d; }
+			};
+			main.res_sender(res)({error:'error'});
+			expect(res._status).to.equal(500);
+			expect(res._data).to.have.property('error','error');
+			main.res_sender(res,201)(null,{status:'OK'});
+			expect(res._status).to.equal(201);
+			expect(res._data).to.have.property('status','OK');
+			done();
+		});
 	});
 	
-	// describe('endpoints', function(){
-	// 	it('should have get /providers', function(done){
-	// 		nock('http://localhost:8080').get('/api/providers').reply(200,[]);
-	// 		request.get('http://localhost:3000/papi/providers',function(e,r,bd){
-	// 			console.log(e,' - ', bd);
-	// 			expect(bd).to.have.length(0);
-	// 			done();
-	// 		});
-	// 	});
-	// });
+	describe('router', function(){
+		var paths = [];
+		var router = {
+			get: function(path, fn){
+				paths.push({method:'get',path:path,func:fn});
+			},
+			post:function(path, fn){
+				paths.push({method:'post',path:path,func:fn});
+			},
+			put:function(path, fn){
+				paths.push({method:'put',path:path,func:fn});
+			},
+			delete:function(path, fn){
+				paths.push({method:'delete',path:path,func:fn});
+			}, 
+		};
+		var res = {
+			status:function(st){ res._status = st; return res; },
+			send:function(d){ res._data = d; }
+		};
+		before(function(done){
+			main.route(router);
+			done();
+		});
+		it('should have routes set', function(){
+			expect(paths).to.have.length(10);
+		});
+		it('should support get providers', function(done){
+			var p1 = paths[0];
+			expect(p1).to.have.property('method','get');
+			expect(p1).to.have.property('path','/papi/providers');
+			expect(p1.func).to.be.a('function');
+			nock('http://localhost:8080').get('/api/providers').reply(200,[]);
+			res.send = function(d){
+				expect(d).to.have.length(0);
+				done();
+			}
+			p1.func({}, res);
+		});
+		it('should support get single provider', function(done){
+			var p2 = paths[1];
+			expect(p2).to.have.property('path','/papi/providers/:id');
+			nock('http://localhost:8080').get('/api/providers/1').reply(200,{xid:'1'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','1');
+				done();
+			};
+			p2.func({params:{id:'1'}}, res);
+		});
+		it('should support get products', function(done){
+			var p3 = paths[2];
+			expect(p3).to.have.property('path','/papi/products');
+			nock('http://localhost:8080').get('/api/products').reply(200,[]);
+			res.send = function(d){
+				expect(d).to.have.length(0);
+				done();
+			};
+			p3.func({}, res);
+		});
+		it('should support single product', function(done){
+			var p4 = paths[3];
+			expect(p4).to.have.property('path','/papi/products/:id');
+			nock('http://localhost:8080').get('/api/products/1').reply(200,{xid:'2'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','2');
+				done();
+			};
+			p4.func({params:{id:'1'}}, res);
+		});
+		it('should support post a provider', function(done){
+			var p = paths[4];
+			expect(p).to.have.property('path','/papi/providers');
+			nock('http://localhost:8080').post('/api/providers').reply(201,{xid:'201'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','201');
+				done();
+			};
+			var req = {
+				body: {name:'pv1',logo:'http',email:'a@b.c'}
+			};
+			p.func(req, res);
+		});
+		it('should support put a provider', function(done){
+			var p = paths[5];
+			expect(p).to.have.property('path','/papi/providers/:id');
+			nock('http://localhost:8080').put('/api/providers/12').reply(200,{xid:'202'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','202');
+				done();
+			};
+			var req = {
+				params: { id: '12'},
+				body: {logo:'http'}
+			};
+			p.func(req, res);
+		});
+		it('should support post a product', function(done){
+			var p = paths[6];
+			expect(p).to.have.property('path','/papi/products');
+			nock('http://localhost:8080').post('/api/products').reply(201,{xid:'203'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','203');
+				done();
+			};
+			var req = {
+				body: {oid:'o1',nm:'pd1',im:'http',pr:{cy:'a',ba:1},dr:{sd:'1'}}
+			};
+			p.func(req, res);
+		});
+		it('should support put a product', function(done){
+			var p = paths[7];
+			expect(p).to.have.property('path','/papi/products/:id');
+			nock('http://localhost:8080').put('/api/products/13').reply(200,{xid:'204'});
+			res.send = function(d){
+				expect(d).to.have.property('xid','204');
+				done();
+			};
+			var req = {
+				params: { id: '13'},
+				body: {im:'http'}
+			};
+			p.func(req, res);
+		});
+		it('should support delete a provider', function(done){
+			var p = paths[8];
+			expect(p).to.have.property('path','/papi/providers/:id');
+			nock('http://localhost:8080').delete('/api/providers/111').reply(204,{});
+			res.send = function(d){
+				done();
+			};
+			p.func({params:{id:'111'}}, res);
+		});
+		it('should support delete a product', function(done){
+			var p = paths[9];
+			expect(p).to.have.property('path','/papi/products/:id');
+			nock('http://localhost:8080').delete('/api/products/112').reply(204,{});
+			res.send = function(d){
+				done();
+			};
+			p.func({params:{id:'112'}}, res);
+		});
+
+	});
 });
