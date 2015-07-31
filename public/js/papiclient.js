@@ -20,7 +20,7 @@ var PapiClient = function($http){
 		//jQuery 1.5+ success=>done, error=>fail
 		ajax(req).success(callback).error(function(arg1,arg2,arg3){
 			if(callback){
-				callback({error:'Ajax call error ' + arg1});
+				callback(arg1);
 			}
 			// jqXHR, textStatus, errorThrown for jquery
 			// data, status, headers, config for angular
