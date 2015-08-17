@@ -1,7 +1,9 @@
-/* global describe, it, before, after */
+/* global describe, it, before, after,process */
 var expect = require('chai').expect;
 var nock = require('nock');
 var request = require('request');
+process.env.PAPI_APPID = 'test';
+process.env.PAPI_APPKEY = 'test';
 var main = require('../lib/main.js');
 
 describe('mainSpec', function(){
@@ -53,12 +55,12 @@ describe('mainSpec', function(){
 		it('should reject products with required fields',function(){
 			main.validate('products',{},function(errs){
 				expect(errs).to.have.property('messages');
-				expect(errs.messages).to.include('oid required');
-				expect(errs.messages).to.include('nm required');
-				expect(errs.messages).to.include('im required');
-				expect(errs.messages).to.include('pr.cy required');
-				expect(errs.messages).to.include('pr.ba required');
-				expect(errs.messages).to.include('dr.sd required');
+				expect(errs.messages).to.include('oid (provider.xid) required');
+				expect(errs.messages).to.include('nm (name) required');
+				expect(errs.messages).to.include('im (image url) required');
+				expect(errs.messages).to.include('pr.cy required. [pr (price),cy (currency)]');
+				expect(errs.messages).to.include('pr.ba required. [pr (price),ba (base price)]');
+				expect(errs.messages).to.include('dr.sd required. [dr (date range),sd (starting date)]');
 			});
 		});
 		it('should accept products',function(){
